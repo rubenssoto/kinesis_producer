@@ -1,47 +1,49 @@
 import boto3
 import json
-
+from acumulator import acumulator
+from threading import Thread
 
 def create_client(region, key_id, secret):
     kinesis_client = boto3.client('kinesis', region_name = region, aws_access_key_id=key_id, aws_secret_access_key=secret)
     return kinesis_client
 
-def send_kinesis(kinesis_client, data, stream_name):
 
-    kinesis_records = []
+class Kinesisproducer:
 
-    send_to_kinesis = False
+    def __init__(self, kinesis_client, data, stream_name, line, num_threads):
+        self.kinesis_client = kinesis_client
+        self.data = data
+        self.stream_name = stream_name
+        self.line = line
+        self.num_threads = num_threads
 
-    response = ''
+    def send_kinesis(self):
+        send_to_kinesis = True
 
-    eventscount = 0
+        while send_to_kinesis == True:
 
-    currentBytes = 0
+            try:
+                kinesis_records = self.line.get_nowait()
+                response = self.kinesis_client.put_records(
+                                        Records = kinesis_records,
+                                        StreamName = self.stream_name
+                                     )
+                print('Event Sended')
+            except:
+                send_to_kinesis = False
 
-    for row in data:
 
-        kinesis_records.append({"Data": json.dumps(row),
-                                "PartitionKey": row['district']})
 
-        currentBytes = len(str(kinesis_records).encode('utf-8'))
 
-        if len(kinesis_records) == 500 or currentBytes >= 800000:
-            send_to_kinesis = True
-            eventscount = eventscount + len(kinesis_records)
+    def multithread(self):
 
-        if send_to_kinesis == True:
-            response = kinesis_client.put_records(
-                                    Records = kinesis_records,
-                                    StreamName = stream_name
-                                 )
+        for i in range(self.num_threads):
+            worker = Thread(target=self.send_kinesis)
+            worker.setDaemon(True)
+            worker.start()
 
-            kinesis_records = []
 
-            send_to_kinesis = False
 
-            currentBytes = 0
-
-            print(f'Sended {eventscount} Events')
 
 
 
