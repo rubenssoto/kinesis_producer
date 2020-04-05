@@ -9,7 +9,7 @@ def acumulator(data, maxsize):
     for row in data:
 
         if len(data_list) < maxsize:
-            data_list.append({"Data": bytes(str(row), 'utf-8'),
+            data_list.append({"Data": bytes(str(json.dumps(row)), 'utf-8'),
                                 "PartitionKey": row['district']})
         else:
             line.put(data_list)

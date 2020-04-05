@@ -10,3 +10,9 @@ def read_csv(filepath):
 
     return dict_list
 
+def read_txt():
+    with open('checkpoint.txt', 'r') as txtfile:
+        line = txtfile.readlines()
+    return line
+
+
